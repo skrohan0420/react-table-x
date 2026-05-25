@@ -9,7 +9,7 @@ export function createColumns<TData>(
     const id = resolveColumnId(columnDef, index);
 
     if (seen.has(id)) {
-      throw new Error(`react-table-x: duplicate column id "${id}".`);
+      throw new Error(`react-smart-tablex: duplicate column id "${id}".`);
     }
 
     seen.add(id);

@@ -1,8 +1,8 @@
-# react-table-x Architecture
+# react-smart-tablex Architecture
 
 ## Design Goals
 
-`react-table-x` is a headless table engine. The core package must never depend
+`react-smart-tablex` is a headless table engine. The core package must never depend
 on React or DOM rendering. React is only an adapter around the reusable engine.
 
 Phase 1 prioritizes:

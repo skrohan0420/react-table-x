@@ -1,13 +1,13 @@
-# react-table-x
+# react-smart-tablex
 
 Headless, extensible, high-performance table primitives for React.
 
-`react-table-x` gives you the table engine and stays out of your markup. It
+`react-smart-tablex` gives you the table engine and stays out of your markup. It
 manages column normalization, row models, state updates, memoization boundaries,
 sorting, filtering, pagination, column visibility, and row selection while you
 keep full control over the rendered UI.
 
-## Why react-table-x?
+## Why react-smart-tablex?
 
 - Headless by default: render plain tables, custom grids, cards, or any design
   system component you already use.
@@ -21,7 +21,7 @@ keep full control over the rendered UI.
 ## Installation
 
 ```bash
-npm install react-table-x
+npm install react-smart-tablex
 ```
 
 React is a peer dependency:
@@ -33,7 +33,7 @@ npm install react react-dom
 ## Quick Start
 
 ```tsx
-import { TableX, createColumnHelper, useTableX } from 'react-table-x';
+import { TableX, createColumnHelper, useTableX } from 'react-smart-tablex';
 
 type Person = {
   id: string;
@@ -79,7 +79,7 @@ render everything yourself.
 ## Render Your Own Markup
 
 ```tsx
-import { flexRender } from 'react-table-x';
+import { flexRender } from 'react-smart-tablex';
 
 function CustomTable() {
   const table = useTableX<Person>({
@@ -167,7 +167,7 @@ state.
 
 ```tsx
 import { useState } from 'react';
-import type { PaginationState, SortingState } from 'react-table-x';
+import type { PaginationState, SortingState } from 'react-smart-tablex';
 
 function ControlledTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -221,7 +221,7 @@ column.accessor('score', {
 ## Filtering
 
 Filtering state is an array of `{ id, value }` objects. By default,
-`react-table-x` performs a case-insensitive string inclusion check.
+`react-smart-tablex` performs a case-insensitive string inclusion check.
 
 ```tsx
 table.setColumnFilters([{ id: 'name', value: 'avery' }]);
@@ -329,7 +329,7 @@ Creates the same table instance without React. Import it from the root package
 or the core subpath.
 
 ```ts
-import { createTableX } from 'react-table-x/core';
+import { createTableX } from 'react-smart-tablex/core';
 ```
 
 ### `TableX`
@@ -369,16 +369,16 @@ All standard `<table>` props are forwarded except `children`.
 ## Import Paths
 
 ```ts
-import { useTableX, TableX } from 'react-table-x';
-import { createTableX } from 'react-table-x/core';
-import { flexRender } from 'react-table-x/react';
+import { useTableX, TableX } from 'react-smart-tablex';
+import { createTableX } from 'react-smart-tablex/core';
+import { flexRender } from 'react-smart-tablex/react';
 ```
 
 The package exposes:
 
-- `react-table-x`: core, React adapter, and built-in feature exports.
-- `react-table-x/core`: framework-agnostic engine exports.
-- `react-table-x/react`: React adapter exports.
+- `react-smart-tablex`: core, React adapter, and built-in feature exports.
+- `react-smart-tablex/core`: framework-agnostic engine exports.
+- `react-smart-tablex/react`: React adapter exports.
 
 ## Local Development
 

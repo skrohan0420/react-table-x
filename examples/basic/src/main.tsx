@@ -105,7 +105,7 @@ function App() {
     <main>
       <header>
         <div>
-          <p>react-table-x</p>
+          <p>react-smart-tablex</p>
           <h1>Headless table example</h1>
         </div>
         <label>

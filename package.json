@@ -1,6 +1,6 @@
 {
-  "name": "react-table-x",
-  "version": "0.0.0",
+  "name": "react-smart-tablex",
+  "version": "0.2.0",
   "description": "Headless, extensible, high-performance table engine for React.",
   "keywords": [
     "react",
