@@ -18,6 +18,11 @@ export function createSortedRowModel<TData>(
         const column = columnsById.get(sort.id);
         const sortingFn = column?.columnDef.sortingFn;
         const direction = sort.desc ? -1 : 1;
+
+        if (!column?.getCanSort()) {
+          continue;
+        }
+
         const result = sortingFn
           ? sortingFn(rowA.row, rowB.row, sort.id)
           : compareValues(rowA.row, rowB.row, sort.id);

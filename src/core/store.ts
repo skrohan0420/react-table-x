@@ -8,7 +8,13 @@ export const defaultTableState: TableState = {
     pageSize: 10
   },
   rowSelection: {},
-  columnFilters: []
+  columnFilters: [],
+  columnSizing: {},
+  columnOrder: [],
+  columnPinning: {},
+  expanded: {},
+  globalFilter: undefined,
+  grouping: []
 };
 
 export function resolveUpdater<TValue>(updater: Updater<TValue>, previous: TValue): TValue {
@@ -31,7 +37,14 @@ export function mergeTableState(
       ...partial?.pagination
     },
     rowSelection: partial?.rowSelection ?? base.rowSelection,
-    columnFilters: partial?.columnFilters ?? base.columnFilters
+    columnFilters: partial?.columnFilters ?? base.columnFilters,
+    columnSizing: partial?.columnSizing ?? base.columnSizing,
+    columnOrder: partial?.columnOrder ?? base.columnOrder,
+    columnPinning: partial?.columnPinning ?? base.columnPinning,
+    expanded: partial?.expanded ?? base.expanded,
+    globalFilter:
+      partial && 'globalFilter' in partial ? partial.globalFilter : base.globalFilter,
+    grouping: partial?.grouping ?? base.grouping
   };
 }
 

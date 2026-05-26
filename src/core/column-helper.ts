@@ -11,6 +11,11 @@ export interface ColumnHelper<TData> {
       id: string;
     }
   ): ColumnDef<TData, TValue>;
+  display(
+    columnDef: Omit<ColumnDef<TData, unknown>, 'accessorKey' | 'accessorFn'> & {
+      id: string;
+    }
+  ): ColumnDef<TData, unknown>;
 }
 
 export function createColumnHelper<TData>(): ColumnHelper<TData> {
@@ -30,6 +35,7 @@ export function createColumnHelper<TData>(): ColumnHelper<TData> {
         ...columnDef,
         accessorKey: accessor
       };
-    }
+    },
+    display: (columnDef) => columnDef
   } as ColumnHelper<TData>;
 }

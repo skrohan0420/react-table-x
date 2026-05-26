@@ -1,5 +1,9 @@
 import type { Column, ColumnDef } from './types.js';
 
+export const defaultColumnSize = 150;
+export const defaultColumnMinSize = 40;
+export const defaultColumnMaxSize = Number.MAX_SAFE_INTEGER;
+
 export function createColumns<TData>(
   columnDefs: readonly ColumnDef<TData, any>[]
 ): Column<TData>[] {
@@ -9,7 +13,7 @@ export function createColumns<TData>(
     const id = resolveColumnId(columnDef, index);
 
     if (seen.has(id)) {
-      throw new Error(`react-smart-tablex: duplicate column id "${id}".`);
+      throw new Error(`dx-data-table: duplicate column id "${id}".`);
     }
 
     seen.add(id);
@@ -17,7 +21,13 @@ export function createColumns<TData>(
     return {
       id,
       columnDef,
-      getValue: createColumnAccessor(columnDef)
+      getValue: createColumnAccessor(columnDef),
+      getDefaultSize: () => columnDef.size ?? defaultColumnSize,
+      getMinSize: () => columnDef.minSize ?? defaultColumnMinSize,
+      getMaxSize: () => columnDef.maxSize ?? defaultColumnMaxSize,
+      getCanGlobalFilter: () => columnDef.enableGlobalFilter !== false,
+      getCanHide: () => columnDef.enableHiding !== false,
+      getCanSort: () => columnDef.enableSorting !== false
     };
   });
 }

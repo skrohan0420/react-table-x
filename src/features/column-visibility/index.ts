@@ -12,5 +12,7 @@ export function createVisibleColumns<TData>(
   columns: readonly Column<TData>[],
   columnVisibility: Record<string, boolean>
 ): Column<TData>[] {
-  return columns.filter((column) => columnVisibility[column.id] !== false);
+  return columns.filter(
+    (column) => !column.getCanHide() || columnVisibility[column.id] !== false
+  );
 }

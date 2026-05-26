@@ -1,5 +1,5 @@
 {
-  "name": "react-smart-tablex",
+  "name": "dx-data-table",
   "version": "0.2.0",
   "description": "Headless, extensible, high-performance table engine for React.",
   "keywords": [
@@ -39,6 +39,11 @@
       "types": "./dist/react/index.d.ts",
       "import": "./dist/react/index.js",
       "require": "./dist/react/index.cjs"
+    },
+    "./features": {
+      "types": "./dist/features/index.d.ts",
+      "import": "./dist/features/index.js",
+      "require": "./dist/features/index.cjs"
     }
   },
   "files": [
@@ -47,8 +52,9 @@
   "scripts": {
     "example": "vite --host 127.0.0.1 examples/basic",
     "test": "vitest run",
+    "benchmark": "vitest bench",
     "typecheck": "tsc --noEmit",
-    "build": "tsup src/index.ts src/core/index.ts src/react/index.ts --format esm,cjs --dts --clean"
+    "build": "tsup src/index.ts src/core/index.ts src/react/index.ts src/features/index.ts --format esm,cjs --dts --clean"
   },
   "peerDependencies": {
     "react": ">=18.2.0"

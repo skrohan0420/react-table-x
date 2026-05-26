@@ -1,13 +1,13 @@
-# react-smart-tablex
+# dx-data-table
 
 Headless, extensible, high-performance table primitives for React.
 
-`react-smart-tablex` gives you the table engine and stays out of your markup. It
+`dx-data-table` gives you the table engine and stays out of your markup. It
 manages column normalization, row models, state updates, memoization boundaries,
 sorting, filtering, pagination, column visibility, and row selection while you
 keep full control over the rendered UI.
 
-## Why react-smart-tablex?
+## Why dx-data-table?
 
 - Headless by default: render plain tables, custom grids, cards, or any design
   system component you already use.
@@ -16,12 +16,14 @@ keep full control over the rendered UI.
 - Client-side sorting, filtering, pagination, visibility, and selection.
 - Manual/server-side modes for sorting, filtering, and pagination.
 - Framework-agnostic core with a lightweight React adapter.
+- Headless column sizing, state persistence, debug snapshots, and virtual-row
+  utilities.
 - ESM, CommonJS, and type declaration builds.
 
 ## Installation
 
 ```bash
-npm install react-smart-tablex
+npm install dx-data-table
 ```
 
 React is a peer dependency:
@@ -33,7 +35,7 @@ npm install react react-dom
 ## Quick Start
 
 ```tsx
-import { TableX, createColumnHelper, useTableX } from 'react-smart-tablex';
+import { Table, createColumnHelper, useTable } from 'dx-data-table';
 
 type Person = {
   id: string;
@@ -50,6 +52,17 @@ const data: Person[] = [
 const column = createColumnHelper<Person>();
 
 const columns = [
+  column.display({
+    id: 'select',
+    header: '',
+    cell: ({ table, row }) => (
+      <input
+        type="checkbox"
+        checked={table.getIsRowSelected(row.id)}
+        onChange={(event) => table.toggleRowSelected(row.id, event.target.checked)}
+      />
+    )
+  }),
   column.accessor('name', {
     header: 'Name'
   }),
@@ -63,26 +76,26 @@ const columns = [
 ];
 
 function PeopleTable() {
-  const table = useTableX<Person>({
+  const table = useTable<Person>({
     data,
     columns,
     getRowId: (row) => row.id
   });
 
-  return <TableX table={table} emptyState="No rows found." />;
+  return <Table table={table} emptyState="No rows found." />;
 }
 ```
 
-`TableX` is a small convenience renderer for semantic HTML tables. You can also
-render everything yourself.
+`Table` is a small convenience renderer for semantic HTML tables. Production
+apps will often render their own markup with the same table instance.
 
 ## Render Your Own Markup
 
 ```tsx
-import { flexRender } from 'react-smart-tablex';
+import { flexRender } from 'dx-data-table';
 
 function CustomTable() {
-  const table = useTableX<Person>({
+  const table = useTable<Person>({
     data,
     columns,
     getRowId: (row) => row.id
@@ -160,6 +173,9 @@ const columns = [
 Accessor functions require an explicit `id` so the table can track sorting,
 filtering, visibility, and cell identity.
 
+Use `column.display(...)` for selection, actions, menus, or any column that does
+not read a value from the original row.
+
 ## Controlled State
 
 Pass `state` plus feature callbacks when you want React to own part of the table
@@ -167,7 +183,7 @@ state.
 
 ```tsx
 import { useState } from 'react';
-import type { PaginationState, SortingState } from 'react-smart-tablex';
+import type { PaginationState, SortingState } from 'dx-data-table';
 
 function ControlledTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -176,7 +192,7 @@ function ControlledTable() {
     pageSize: 10
   });
 
-  const table = useTableX<Person>({
+  const table = useTable<Person>({
     data,
     columns,
     state: {
@@ -187,7 +203,7 @@ function ControlledTable() {
     onPaginationChange: setPagination
   });
 
-  return <TableX table={table} />;
+  return <Table table={table} />;
 }
 ```
 
@@ -198,6 +214,12 @@ Supported state slices:
 - `pagination`
 - `rowSelection`
 - `columnFilters`
+- `columnSizing`
+- `columnOrder`
+- `columnPinning`
+- `expanded`
+- `globalFilter`
+- `grouping`
 
 ## Sorting
 
@@ -221,10 +243,11 @@ column.accessor('score', {
 ## Filtering
 
 Filtering state is an array of `{ id, value }` objects. By default,
-`react-smart-tablex` performs a case-insensitive string inclusion check.
+`dx-data-table` performs a case-insensitive string inclusion check.
 
 ```tsx
 table.setColumnFilters([{ id: 'name', value: 'avery' }]);
+table.setGlobalFilter('platform');
 ```
 
 Add a `filterFn` for custom filtering:
@@ -234,6 +257,15 @@ column.accessor('score', {
   header: 'Score',
   filterFn: (row, columnId, filterValue) =>
     row.getValue<number>(columnId) >= Number(filterValue)
+});
+```
+
+Disable global filtering for columns that should not participate in search:
+
+```tsx
+column.accessor('score', {
+  header: 'Score',
+  enableGlobalFilter: false
 });
 ```
 
@@ -257,6 +289,10 @@ application IDs.
 table.toggleRowSelected(row.id);
 table.toggleRowSelected(row.id, true);
 table.getIsRowSelected(row.id);
+table.toggleAllPageRowsSelected(true);
+table.toggleAllFilteredRowsSelected(false);
+table.getIsAllPageRowsSelected();
+table.getIsSomePageRowsSelected();
 ```
 
 ## Column Visibility
@@ -264,7 +300,7 @@ table.getIsRowSelected(row.id);
 Set a column ID to `false` to hide it. Omitted columns remain visible.
 
 ```tsx
-const table = useTableX<Person>({
+const table = useTable<Person>({
   data,
   columns,
   state: {
@@ -275,13 +311,225 @@ const table = useTableX<Person>({
 });
 ```
 
+Columns with `enableHiding: false` stay visible even if their ID is set to
+`false`.
+
+## Column Ordering
+
+Column order is state-driven and works with custom drag-and-drop libraries.
+
+```tsx
+table.setColumnOrder(['select', 'name', 'score', 'role']);
+table.resetColumnOrder();
+table.getAllColumns().map((column) => column.id);
+```
+
+Omitted column IDs are appended in their original definition order, which makes
+stored preferences resilient to newly-added columns.
+
+## Column Pinning
+
+Pinning is headless: the table returns pinned column groups, and your renderer
+chooses whether to use sticky positioning, split tables, or a grid layout.
+
+```tsx
+table.pinColumn('name', 'left');
+table.pinColumn('score', 'right');
+table.pinColumn('name', false);
+
+table.getLeftVisibleColumns();
+table.getCenterVisibleColumns();
+table.getRightVisibleColumns();
+```
+
+`getVisibleColumns()` returns columns in render order: left pinned, center, then
+right pinned.
+
+## Row Expansion
+
+Provide `getSubRows` for tree data or master/detail rows. Expanded rows are
+flattened before pagination so page sizes reflect what users see.
+
+```tsx
+const table = useTable<Person>({
+  data,
+  columns,
+  getRowId: (row) => row.id,
+  getSubRows: (row) => row.children
+});
+
+row.getCanExpand();
+row.getIsExpanded();
+row.toggleExpanded();
+table.toggleRowExpanded(row.id, true);
+```
+
+Use `manualExpanding` when the server already returns the expanded shape.
+
+## Grouping Scaffold
+
+Grouping state is available for controlled integrations and future grouped row
+models. Today it does not transform rows by itself; use it to persist user
+intent or coordinate server-side grouping.
+
+```tsx
+table.setGrouping(['role']);
+table.getState().grouping;
+```
+
+A full grouped row model with aggregation is intentionally left as a separate
+feature so simple tables do not pay for grouping machinery.
+
+## Lookups
+
+Lookup APIs avoid repeated scans in renderers, devtools, and interaction code.
+
+```tsx
+const scoreColumn = table.getColumn('score');
+const selectedRow = table.getRow('user-1');
+```
+
+`getRow` reads from the core row map, so nested rows are available even when
+their parent is collapsed.
+
+## Column Sizing
+
+Column sizing is headless state. Define defaults on a column and render widths
+however your UI layer prefers.
+
+```tsx
+const columns = [
+  column.accessor('name', {
+    header: 'Name',
+    size: 220,
+    minSize: 120,
+    maxSize: 360
+  })
+];
+
+table.setColumnSize('name', 260);
+table.getColumnSize('name'); // 260, clamped to min/max
+table.resetColumnSizing();
+```
+
+Control it with `state.columnSizing` and `onColumnSizingChange` when storing
+sizes in React, local storage, or a server profile.
+
+To make a draggable resize handle, update the size from pointer movement:
+
+```tsx
+import type { Header, TableInstance } from 'dx-data-table';
+
+function ResizableHeader({
+  header,
+  table
+}: {
+  header: Header<Person>;
+  table: TableInstance<Person>;
+}) {
+  const startResize = (event: React.PointerEvent) => {
+    event.preventDefault();
+
+    const startX = event.clientX;
+    const startSize = table.getColumnSize(header.column.id);
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      table.setColumnSize(
+        header.column.id,
+        startSize + moveEvent.clientX - startX
+      );
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp, { once: true });
+  };
+
+  return (
+    <th style={{ width: table.getColumnSize(header.column.id) }}>
+      {flexRender(
+        header.column.columnDef.header ?? header.column.id,
+        table.getHeaderContext(header)
+      )}
+      <button
+        aria-label={`Resize ${header.column.id}`}
+        type="button"
+        onPointerDown={startResize}
+      />
+    </th>
+  );
+}
+```
+
+The built-in `Table` convenience renderer applies the current column widths, but
+it does not render resize handles.
+
+## Virtualization Compatibility
+
+The library does not ship a DOM virtualizer, but it exposes a tiny row-window
+calculator that prepares the row model for TanStack Virtual-style rendering or a
+custom scroller.
+
+```tsx
+import { useVirtualRows } from 'dx-data-table/react';
+
+const virtual = useVirtualRows(table, {
+  estimateSize: 36,
+  scrollOffset,
+  viewportSize,
+  overscan: 4
+});
+```
+
+For framework-agnostic usage, import `getVirtualItems` from `dx-data-table/core`.
+
+## State Persistence
+
+Serialize only the slices you want to persist:
+
+```ts
+const saved = table.getSerializableState([
+  'sorting',
+  'columnFilters',
+  'columnVisibility',
+  'columnSizing'
+]);
+
+localStorage.setItem('people-table', JSON.stringify(saved));
+table.hydrateState(JSON.parse(localStorage.getItem('people-table') ?? '{}'));
+```
+
+`hydrateState` merges with the current state, so omitted slices keep their
+existing values.
+
+## Debugging
+
+Set `debug` while developing to inspect state updates and row-model counts.
+
+```ts
+const table = createTable({
+  data,
+  columns,
+  debug: { state: true, warnings: true }
+});
+
+console.table(table.getDebugSnapshot().rows);
+```
+
+Warnings are enabled by default for invalid runtime operations such as sizing an
+unknown column. Pass `debug: false` to silence them.
+
 ## Server-Side Data
 
 When your API handles row transforms, enable the matching manual flags. The
 table will preserve state and skip the client-side transform.
 
 ```tsx
-const table = useTableX<Person>({
+const table = useTable<Person>({
   data,
   columns,
   state: {
@@ -300,12 +548,12 @@ const table = useTableX<Person>({
 
 ## API Overview
 
-### `useTableX(options)`
+### `useTable(options)`
 
 Creates and subscribes to a stable table instance in React.
 
 ```tsx
-const table = useTableX({
+const table = useTable({
   data,
   columns,
   getRowId,
@@ -316,28 +564,38 @@ const table = useTableX({
   onPaginationChange,
   onRowSelectionChange,
   onColumnFiltersChange,
+  onColumnSizingChange,
+  onColumnOrderChange,
+  onColumnPinningChange,
+  onExpandedChange,
+  onGlobalFilterChange,
+  onGroupingChange,
+  getSubRows,
+  globalFilterFn,
   manualPagination,
   manualSorting,
   manualFiltering,
+  manualExpanding,
+  debug,
   features
 });
 ```
 
-### `createTableX(options)`
+### `createTable(options)`
 
 Creates the same table instance without React. Import it from the root package
 or the core subpath.
 
 ```ts
-import { createTableX } from 'react-smart-tablex/core';
+import { createTable } from 'dx-data-table/core';
 ```
 
-### `TableX`
+### `Table`
 
 Renders a basic semantic table using the table instance.
 
 ```tsx
-<TableX table={table} className="people-table" emptyState="No rows found." />
+<Table table={table} className="people-table" emptyState="No rows found." />
 ```
 
 All standard `<table>` props are forwarded except `children`.
@@ -350,35 +608,63 @@ All standard `<table>` props are forwarded except `children`.
 - `setState(updater)`
 - `subscribe(listener)`
 - `getAllColumns()`
+- `getColumn(columnId)`
 - `getVisibleColumns()`
+- `getLeftVisibleColumns()`
+- `getCenterVisibleColumns()`
+- `getRightVisibleColumns()`
 - `getHeaderGroups()`
+- `getRow(rowId)`
 - `getCoreRowModel()`
 - `getFilteredRowModel()`
 - `getSortedRowModel()`
+- `getExpandedRowModel()`
 - `getPaginationRowModel()`
 - `getRowModel()`
 - `setSorting(updater)`
 - `setPagination(updater)`
 - `setColumnFilters(updater)`
+- `setGlobalFilter(updater)`
 - `setRowSelection(updater)`
+- `toggleAllPageRowsSelected(selected?)`
+- `toggleAllFilteredRowsSelected(selected?)`
+- `getIsAllPageRowsSelected()`
+- `getIsSomePageRowsSelected()`
+- `setColumnSizing(updater)`
+- `setColumnSize(columnId, size)`
+- `resetColumnSizing()`
+- `getColumnSize(columnId)`
+- `setColumnOrder(updater)`
+- `resetColumnOrder()`
+- `setColumnPinning(updater)`
+- `pinColumn(columnId, position)`
+- `setExpanded(updater)`
+- `toggleRowExpanded(rowId, expanded?)`
+- `setGrouping(updater)`
 - `toggleRowSelected(rowId, selected?)`
 - `getIsRowSelected(rowId)`
+- `getSerializableState(keys?)`
+- `hydrateState(updater)`
+- `subscribeToState(selector, listener, isEqual?)`
+- `getDebugSnapshot()`
 - `getCellContext(cell)`
 - `getHeaderContext(header)`
 
 ## Import Paths
 
 ```ts
-import { useTableX, TableX } from 'react-smart-tablex';
-import { createTableX } from 'react-smart-tablex/core';
-import { flexRender } from 'react-smart-tablex/react';
+import { useTable, Table } from 'dx-data-table';
+import { createTable } from 'dx-data-table/core';
+import { flexRender, useTableState } from 'dx-data-table/react';
+import { columnSizingFeature } from 'dx-data-table/features';
 ```
 
 The package exposes:
 
-- `react-smart-tablex`: core, React adapter, and built-in feature exports.
-- `react-smart-tablex/core`: framework-agnostic engine exports.
-- `react-smart-tablex/react`: React adapter exports.
+- `dx-data-table`: core, React adapter, and built-in feature exports.
+- `dx-data-table/core`: framework-agnostic engine exports.
+- `dx-data-table/react`: React adapter exports.
+- `dx-data-table/features`: feature modules and feature utilities.
 
 ## Local Development
 
@@ -398,6 +684,12 @@ Run TypeScript checks:
 
 ```bash
 npm run typecheck
+```
+
+Run benchmarks:
+
+```bash
+npm run benchmark
 ```
 
 Build the package:
@@ -435,6 +727,9 @@ npm publish
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the package boundaries,
 row-model pipeline, feature system, and performance rules.
+
+See [docs/FEATURES.md](docs/FEATURES.md) for the feature-by-feature API guide
+and implementation status.
 
 ## License
 
