@@ -51,6 +51,8 @@
   ],
   "scripts": {
     "example": "vite --host 127.0.0.1 examples/basic",
+    "website": "vite --host 127.0.0.1 website",
+    "website:build": "vite build website",
     "test": "vitest run",
     "benchmark": "vitest bench",
     "typecheck": "tsc --noEmit",
